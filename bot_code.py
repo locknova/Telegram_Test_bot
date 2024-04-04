@@ -32,6 +32,7 @@ async def process_start_command(message: Message):
     user['writename'] = True
 
 
+# Создание кнопки "Ознакомится"
 button_accept = KeyboardButton(text='Ознакомился')
 
 accept_kb =  ReplyKeyboardMarkup(keyboard=[[button_accept]], resize_keyboard=True, one_time_keyboard=True)

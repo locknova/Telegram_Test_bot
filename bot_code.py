@@ -1,10 +1,11 @@
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command, CommandStart
-from aiogram.types import Message
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from aiogram.types import InputFile
+from aiogram.types.input_file import FSInputFile
+
 
 
 
@@ -12,6 +13,7 @@ BOT_TOKEN = '7023769811:AAFGbBOopl1nkcZ2CkHXOomccDQ51eEeOsU'
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
+
 
 # Данные о пользователе и флаги для их изменения
 user = {'writename': False,
@@ -29,6 +31,7 @@ async def process_start_command(message: Message):
     username = message.from_user.username
     await message.answer(F'Привет, {username}!\nДобро пожаловать в компанию DamnIT')
     await message.answer('Напишите своё ФИО')
+
     user['writename'] = True
 
 
@@ -41,7 +44,7 @@ accept_kb =  ReplyKeyboardMarkup(keyboard=[[button_accept]], resize_keyboard=Tru
 
 
 # Принимает любое сообщение. Сначала запрашивет ФИО, затем номер телефона, затем скидывает общие положения. Последующие сообщения передают списибо за регистрацию
-@dp.message()
+@dp.message(F.text != "Ознакомился")
 async def send_echo(message: Message):
     if user['writename']:
         catch_number = False
@@ -54,7 +57,7 @@ async def send_echo(message: Message):
             user['writename'] = False
             user['writephone'] = True
             user['fullname'] = str(message.text)
-            await message.answer('Укажите ваш номер телефона')
+            await message.answer('Укажите ваш номер телефона в формате "7 999 999 99 99"')
 
 
     elif user['writephone']:
@@ -64,7 +67,7 @@ async def send_echo(message: Message):
         for i in message.text:
             if not( ord('9')>=ord(i)>=ord('0') or i==' '):
                 catch_letter = True
-        if (catch_letter or len(str(message.text)) != 11):
+        if (catch_letter or len(str(message.text)) != 15):
             await message.answer("Неверно написан номер телефона. Напишите ещё раз")
         else:
             user['writephone'] = False
@@ -75,13 +78,25 @@ async def send_echo(message: Message):
 
     elif user['anymessage']:
         await message.answer(
-
+            text="Последний шаг! Ознакомься с вводными положениями",
             reply_markup=accept_kb
         )
-        await message.answer_photo(InputFile('Rules.pdf'))
+        rules = FSInputFile('Rules.pdf')
+        await message.answer_document(rules)
     else:
-        await message.answer('Спасибо за успешную регистрацию')
+        await message.answer('Вас приветствует компания DamnIT')
     
+
+
+@dp.message(F.text == 'Ознакомился')
+async def process_cucumber_answer(message: Message):
+    if user['anymessage']:
+        await message.answer(
+            text='Спасибо за успешную регистрацию'
+        )
+        photo = FSInputFile('lastphoto.jpg')
+        await message.answer_document(photo)
+        user['anymessage'] = False
         
 
 # Сраабатывает на команду "/help"
